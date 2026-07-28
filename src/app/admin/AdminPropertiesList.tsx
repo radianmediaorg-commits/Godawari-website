@@ -6,7 +6,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
   const [properties, setProperties] = useState(initialProperties);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', description: '', price: '', category: 'Real Estate', status: 'AVAILABLE', brochure: '', contactPhone: '', images: '', units: [] as any[] });
+  const [formData, setFormData] = useState({ title: '', description: '', category: 'Real Estate', status: 'AVAILABLE', brochure: '', contactPhone: '', images: '', units: [] as any[] });
   const [loading, setLoading] = useState(false);
   const [viewingLeadsId, setViewingLeadsId] = useState<string | null>(null);
   const router = useRouter();
