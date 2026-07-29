@@ -55,6 +55,11 @@ export default async function PropertiesPage() {
                     </div>
                     <div className="service-content">
                       <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>{property.title}</h3>
+                      {property.address && (
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', marginBottom: '10px' }}>
+                          <i className="fa-solid fa-location-dot" style={{ marginRight: '5px' }}></i> {property.address}
+                        </p>
+                      )}
                       <p style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {property.description}
                       </p>

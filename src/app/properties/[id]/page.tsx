@@ -54,7 +54,12 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
           <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1.5', minWidth: '300px' }}>
               <div style={{ marginBottom: '20px' }}>
-                <h1 style={{ fontSize: '2.5rem', color: 'var(--primary-color)' }}>{property.title}</h1>
+                <h1 style={{ fontSize: '2.5rem', color: 'var(--primary-color)', marginBottom: '5px' }}>{property.title}</h1>
+                {property.address && (
+                  <p style={{ fontSize: '1.1rem', color: 'var(--text-light)', margin: 0 }}>
+                    <i className="fa-solid fa-location-dot" style={{ marginRight: '5px', color: 'var(--accent-color)' }}></i> {property.address}
+                  </p>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
                 <span style={{ display: 'inline-block', background: 'var(--primary-color)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.9rem' }}>

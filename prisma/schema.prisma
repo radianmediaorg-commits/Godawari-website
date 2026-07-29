@@ -22,6 +22,7 @@ model Property {
   price       Float?
   category    String   // e.g., Land, Commercial, Residential, Hospitality
   status      String   @default("AVAILABLE") // AVAILABLE, SOLD
+  address     String?  // Optional property address
   brochure    String?  // Optional URL to PDF brochure
   contactPhone String? // Optional contact phone number
   images      String   // Storing JSON string array of Cloudinary URLs

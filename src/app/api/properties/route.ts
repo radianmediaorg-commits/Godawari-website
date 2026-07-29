@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
         price: data.price ? parseFloat(data.price) : null,
         category: data.category,
         status: data.status || 'AVAILABLE',
+        address: data.address || null,
         brochure: data.brochure || null,
         contactPhone: data.contactPhone || null,
         images: JSON.stringify(data.images || []),
