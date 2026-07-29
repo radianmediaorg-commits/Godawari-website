@@ -32,10 +32,18 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         status: property.status,
         contactPhone: property.contactPhone || '',
         existingBrochure: property.brochure || '',
-        existingImages: property.images ? JSON.parse(property.images) : [],
+        existingImages: (() => {
+          if (!property.images) return [];
+          try { return JSON.parse(property.images); }
+          catch(e) { return typeof property.images === 'string' ? [property.images] : []; }
+        })(),
         units: property.units ? property.units.map((u: any) => ({
           ...u,
-          existingImages: u.images ? JSON.parse(u.images) : [],
+          existingImages: (() => {
+            if (!u.images) return [];
+            try { return JSON.parse(u.images); }
+            catch(e) { return typeof u.images === 'string' ? [u.images] : []; }
+          })(),
           newImagesFiles: null
         })) : []
       });

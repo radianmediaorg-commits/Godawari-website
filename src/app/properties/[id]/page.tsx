@@ -15,7 +15,12 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
     notFound();
   }
 
-  const images = JSON.parse(property.images || '[]');
+  let images = [];
+  try {
+    images = JSON.parse(property.images || '[]');
+  } catch (e) {
+    images = typeof property.images === 'string' ? [property.images] : [];
+  }
   const coverImage = images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80';
 
   return (
@@ -77,7 +82,12 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                   <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>Available Units</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     {property.units.map((unit: any) => {
-                      const unitImages = JSON.parse(unit.images || '[]');
+                      let unitImages = [];
+                      try {
+                        unitImages = JSON.parse(unit.images || '[]');
+                      } catch (e) {
+                        unitImages = typeof unit.images === 'string' ? [unit.images] : [];
+                      }
                       return (
                         <div key={unit.id} style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

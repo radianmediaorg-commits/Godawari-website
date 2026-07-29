@@ -37,7 +37,12 @@ export default async function PropertiesPage() {
           ) : (
             <div className="services-grid">
               {properties.map((property) => {
-                const images = JSON.parse(property.images || '[]');
+                let images = [];
+                try {
+                  images = JSON.parse(property.images || '[]');
+                } catch (e) {
+                  images = typeof property.images === 'string' ? [property.images] : [];
+                }
                 const coverImage = images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';
                 
                 return (
