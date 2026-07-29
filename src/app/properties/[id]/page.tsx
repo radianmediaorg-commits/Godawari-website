@@ -104,16 +104,19 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                               </div>
                             </div>
                             <div style={{ fontSize: '1.25rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
-                              {unit.price ? `$${unit.price.toLocaleString()}` : 'Price on Request'}
+                              {unit.price ? `₹${unit.price.toLocaleString()}` : 'Price on Request'}
                             </div>
                           </div>
                           {unitImages.length > 0 && (
-                            <div style={{ marginTop: '15px', display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px' }}>
-                              {unitImages.map((img: string, idx: number) => (
-                                <img key={idx} src={img} alt={`${unit.title} - ${idx}`} style={{ height: '80px', width: '120px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
-                              ))}
+                            <div style={{ marginTop: '15px' }}>
+                              <img src={unitImages[0]} alt={`${unit.title}`} style={{ height: '150px', width: '100%', objectFit: 'cover', borderRadius: '4px' }} />
                             </div>
                           )}
+                          <div style={{ marginTop: '20px', textAlign: 'right' }}>
+                            <Link href={`/properties/${property.id}/units/${unit.id}`} className="btn-outline" style={{ display: 'inline-block', padding: '8px 20px' }}>
+                              View Unit Details &rarr;
+                            </Link>
+                          </div>
                         </div>
                       );
                     })}

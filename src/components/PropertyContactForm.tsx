@@ -61,7 +61,7 @@ export default function PropertyContactForm({ propertyTitle, propertyId, units }
             <select value={selectedUnit} onChange={handleUnitChange} style={{ width: '100%', padding: '15px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '1rem', background: '#f8f9fa' }}>
               <option value="">Interested in any unit</option>
               {units.map((u: any) => (
-                <option key={u.id} value={u.title}>{u.title} {u.price ? `($${u.price.toLocaleString()})` : ''}</option>
+                <option key={u.id} value={u.title}>{u.title} {u.price ? `(₹${u.price.toLocaleString()})` : ''}</option>
               ))}
             </select>
           </div>
