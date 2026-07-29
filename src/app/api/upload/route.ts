@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
           folder: 'godawari',
           resource_type: resourceType,
           use_filename: true,
-          unique_filename: true
+          unique_filename: true,
+          filename_override: file.name
         },
         (error, result) => {
           if (error) {

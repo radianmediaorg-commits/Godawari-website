@@ -61,7 +61,7 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                   {property.category}
                 </span>
                 {property.brochure && (
-                  <a href={property.brochure} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}>
+                  <a href={property.brochure} target="_blank" rel="noopener noreferrer" download="Brochure.pdf" style={{ color: 'var(--accent-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}>
                     <i className="fa-solid fa-file-pdf"></i> Download Brochure
                   </a>
                 )}
