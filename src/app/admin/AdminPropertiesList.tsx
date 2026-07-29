@@ -6,7 +6,18 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
   const [properties, setProperties] = useState(initialProperties);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', description: '', category: 'Real Estate', status: 'AVAILABLE', brochure: '', contactPhone: '', images: '', units: [] as any[] });
+  
+  const [formData, setFormData] = useState({ 
+    title: '', description: '', category: 'Real Estate', status: 'AVAILABLE', 
+    contactPhone: '', 
+    existingBrochure: '', 
+    existingImages: [] as string[],
+    units: [] as any[] 
+  });
+  
+  const [newImageFiles, setNewImageFiles] = useState<FileList | null>(null);
+  const [newBrochureFile, setNewBrochureFile] = useState<File | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const [viewingLeadsId, setViewingLeadsId] = useState<string | null>(null);
   const router = useRouter();
@@ -19,38 +30,90 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         description: property.description,
         category: property.category,
         status: property.status,
-        brochure: property.brochure || '',
         contactPhone: property.contactPhone || '',
-        images: property.images ? JSON.parse(property.images).join(', ') : '',
+        existingBrochure: property.brochure || '',
+        existingImages: property.images ? JSON.parse(property.images) : [],
         units: property.units ? property.units.map((u: any) => ({
           ...u,
-          images: u.images ? JSON.parse(u.images).join(', ') : ''
+          existingImages: u.images ? JSON.parse(u.images) : [],
+          newImagesFiles: null
         })) : []
       });
     } else {
       setEditingId(null);
-      setFormData({ title: '', description: '', category: 'Real Estate', status: 'AVAILABLE', brochure: '', contactPhone: '', images: '', units: [] });
+      setFormData({ 
+        title: '', description: '', category: 'Real Estate', status: 'AVAILABLE', 
+        contactPhone: '', existingBrochure: '', existingImages: [], units: [] 
+      });
     }
+    setNewImageFiles(null);
+    setNewBrochureFile(null);
     setIsModalOpen(true);
+  };
+
+  const uploadFile = async (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: fd
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    const data = await res.json();
+    return data.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      ...formData,
-      images: formData.images.split(',').map(url => url.trim()).filter(url => url),
-      units: formData.units.map(u => ({
-        ...u,
-        images: u.images ? u.images.split(',').map((url: string) => url.trim()).filter((url: string) => url) : []
-      }))
-    };
-
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/properties/${editingId}` : '/api/properties';
-
     try {
+      // 1. Upload brochure if new one selected
+      let brochureUrl = formData.existingBrochure;
+      if (newBrochureFile) {
+        brochureUrl = await uploadFile(newBrochureFile);
+      }
+
+      // 2. Upload property images if new ones selected
+      let propertyImageUrls = [...formData.existingImages];
+      if (newImageFiles && newImageFiles.length > 0) {
+        const uploadPromises = Array.from(newImageFiles).map(uploadFile);
+        const newUrls = await Promise.all(uploadPromises);
+        propertyImageUrls = [...propertyImageUrls, ...newUrls];
+      }
+
+      // 3. Upload unit images
+      const processedUnits = await Promise.all(formData.units.map(async (u) => {
+        let unitImageUrls = [...(u.existingImages || [])];
+        if (u.newImagesFiles && u.newImagesFiles.length > 0) {
+          const unitUploadPromises = Array.from((u.newImagesFiles as FileList)).map(uploadFile);
+          const newUnitUrls = await Promise.all(unitUploadPromises);
+          unitImageUrls = [...unitImageUrls, ...newUnitUrls];
+        }
+        return {
+          title: u.title,
+          description: u.description || null,
+          price: u.price || null,
+          size: u.size || null,
+          status: u.status,
+          images: unitImageUrls
+        };
+      }));
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        status: formData.status,
+        contactPhone: formData.contactPhone,
+        brochure: brochureUrl,
+        images: propertyImageUrls,
+        units: processedUnits
+      };
+
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId ? `/api/properties/${editingId}` : '/api/properties';
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -60,11 +123,13 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
       if (res.ok) {
         setIsModalOpen(false);
         router.refresh();
-        // Optimistic UI update could go here
         window.location.reload(); // Simple reload to get fresh data
+      } else {
+        throw new Error('Failed to save property to database');
       }
     } catch (error) {
       console.error(error);
+      alert('Error saving property. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -164,8 +229,14 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
               </div>
               <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                 <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Brochure URL (PDF)</label>
-                  <input type="text" placeholder="https://..." value={formData.brochure} onChange={e => setFormData({...formData, brochure: e.target.value})} />
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Brochure (PDF)</label>
+                  {formData.existingBrochure && (
+                    <div style={{ marginBottom: '5px' }}>
+                      <a href={formData.existingBrochure} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>View Current Brochure</a>
+                    </div>
+                  )}
+                  <input type="file" accept="application/pdf" onChange={e => setNewBrochureFile(e.target.files ? e.target.files[0] : null)} />
+                  <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload a new PDF to replace the existing one.</small>
                 </div>
                 <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Contact Phone</label>
@@ -173,15 +244,25 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                 </div>
               </div>
               <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Image URLs (comma separated)</label>
-                <input type="text" placeholder="https://unsplash.com/..., https://..." value={formData.images} onChange={e => setFormData({...formData, images: e.target.value})} />
-                <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>For Railway/Production, you would typically integrate Cloudinary upload widget here, but for now just paste direct image URLs.</small>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Images</label>
+                {formData.existingImages.length > 0 && (
+                  <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
+                    {formData.existingImages.map((img, i) => (
+                      <div key={i} style={{ position: 'relative', minWidth: '80px', height: '60px' }}>
+                        <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                        <button type="button" onClick={() => setFormData({...formData, existingImages: formData.existingImages.filter((_, idx) => idx !== i)})} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input type="file" multiple accept="image/*" onChange={e => setNewImageFiles(e.target.files)} />
+                <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload new images (they will be added to the existing ones).</small>
               </div>
               
               <div style={{ marginTop: '30px', marginBottom: '20px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                   <h4 style={{ margin: 0, color: 'var(--primary-color)' }}>Sub-properties / Units</h4>
-                  <button type="button" onClick={() => setFormData({...formData, units: [...formData.units, { title: '', description: '', price: '', size: '', images: '', status: 'AVAILABLE' }]})} style={{ background: 'white', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>+ Add Unit</button>
+                  <button type="button" onClick={() => setFormData({...formData, units: [...formData.units, { title: '', description: '', price: '', size: '', existingImages: [], newImagesFiles: null, status: 'AVAILABLE' }]})} style={{ background: 'white', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>+ Add Unit</button>
                 </div>
                 
                 {formData.units.length === 0 ? (
@@ -218,8 +299,18 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                           </div>
                         </div>
                         <div style={{ marginTop: '10px' }}>
-                          <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Unit Images (comma separated URLs)</label>
-                          <input type="text" placeholder="https://..." value={unit.images || ''} onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].images = e.target.value; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
+                          <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Unit Images</label>
+                          {unit.existingImages?.length > 0 && (
+                            <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
+                              {unit.existingImages.map((img: string, i: number) => (
+                                <div key={i} style={{ position: 'relative', minWidth: '60px', height: '40px' }}>
+                                  <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                  <button type="button" onClick={() => { const newUnits = [...formData.units]; newUnits[index].existingImages = newUnits[index].existingImages.filter((_: any, idx: number) => idx !== i); setFormData({...formData, units: newUnits}); }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '15px', height: '15px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <input type="file" multiple accept="image/*" onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].newImagesFiles = e.target.files; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
                         </div>
                       </div>
                     ))}
@@ -228,7 +319,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
               </div>
 
               <button type="submit" className="btn-primary w-100" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Property'}
+                {loading ? 'Uploading & Saving...' : 'Save Property'}
               </button>
             </form>
           </div>
