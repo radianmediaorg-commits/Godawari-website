@@ -91,12 +91,11 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         brochureUrl = await uploadFile(newBrochureFile);
       }
 
-      // 2. Upload property images if new ones selected
       let propertyImageUrls = [...formData.existingImages];
       if (newImageFiles && newImageFiles.length > 0) {
         const uploadPromises = newImageFiles.map(uploadFile);
         const newUrls = await Promise.all(uploadPromises);
-        propertyImageUrls = [...propertyImageUrls, ...newUrls];
+        propertyImageUrls = [newUrls[0]]; // Only keep the newest uploaded photo
       }
 
       // 3. Upload unit images
@@ -266,34 +265,28 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                 </div>
               </div>
               <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Images</label>
-                {formData.existingImages.length > 0 && (
-                  <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
-                    {formData.existingImages.map((img, i) => (
-                      <div key={i} style={{ position: 'relative', minWidth: '80px', height: '60px' }}>
-                        <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                        <button type="button" onClick={() => setFormData({...formData, existingImages: formData.existingImages.filter((_, idx) => idx !== i)})} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
-                      </div>
-                    ))}
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Property Photo (Cover Image)</label>
+                {formData.existingImages.length > 0 && newImageFiles.length === 0 && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <div style={{ position: 'relative', width: '150px', height: '100px' }}>
+                      <img src={formData.existingImages[0]} alt="Current Cover" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                    </div>
                   </div>
                 )}
                 {newImageFiles.length > 0 && (
-                  <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
-                    {newImageFiles.map((file, i) => (
-                      <div key={i} style={{ position: 'relative', minWidth: '80px', height: '60px' }}>
-                        <img src={URL.createObjectURL(file)} alt={`New Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                        <button type="button" onClick={() => setNewImageFiles(newImageFiles.filter((_, idx) => idx !== i))} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
-                      </div>
-                    ))}
+                  <div style={{ marginBottom: '10px' }}>
+                    <div style={{ position: 'relative', width: '150px', height: '100px' }}>
+                      <img src={URL.createObjectURL(newImageFiles[0])} alt="New Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                    </div>
                   </div>
                 )}
-                <input type="file" multiple accept="image/*" onChange={e => {
-                  if (e.target.files) {
-                    setNewImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                <input type="file" accept="image/*" onChange={e => {
+                  if (e.target.files && e.target.files[0]) {
+                    setNewImageFiles([e.target.files[0]]);
                   }
                   e.target.value = '';
                 }} />
-                <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload new images (they will be added to the existing ones).</small>
+                <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload a new photo (this will replace the current one).</small>
               </div>
               
               <div style={{ marginTop: '30px', marginBottom: '20px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>

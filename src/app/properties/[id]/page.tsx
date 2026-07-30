@@ -124,18 +124,6 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                 </div>
               )}
 
-              {images.length > 1 && (
-                <div style={{ marginTop: '40px' }}>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>Gallery</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
-                    {images.slice(1).map((img: string, idx: number) => (
-                      <div key={idx} style={{ height: '150px', borderRadius: '8px', overflow: 'hidden' }}>
-                        <img src={img} alt={`${property.title} - ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div style={{ flex: '1', minWidth: '300px' }}>

@@ -32,14 +32,21 @@ export async function POST(req: NextRequest) {
     const resourceType = isPdf ? 'raw' : 'auto';
 
     return new Promise<NextResponse>((resolve, reject) => {
+      const uploadOptions: any = {
+        folder: 'godawari',
+        resource_type: resourceType,
+      };
+
+      // Only force filename for PDFs so they download with the correct .pdf extension.
+      // For images, let Cloudinary generate a random ID to guarantee a new URL and prevent browser caching.
+      if (isPdf) {
+        uploadOptions.use_filename = true;
+        uploadOptions.unique_filename = true;
+        uploadOptions.filename_override = file.name;
+      }
+
       const stream = cloudinary.uploader.upload_stream(
-        { 
-          folder: 'godawari',
-          resource_type: resourceType,
-          use_filename: true,
-          unique_filename: true,
-          filename_override: file.name
-        },
+        uploadOptions,
         (error, result) => {
           if (error) {
             console.error('Cloudinary upload error:', error);
