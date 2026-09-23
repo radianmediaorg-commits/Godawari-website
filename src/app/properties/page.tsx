@@ -50,7 +50,9 @@ export default async function PropertiesPage() {
                     <div className="service-img" style={{ height: '250px' }}>
                       <img src={coverImage} alt={property.title} />
                       {property.status === 'SOLD' && (
-                        <div style={{ position: 'absolute', top: 10, right: 10, background: 'red', color: 'white', padding: '5px 15px', borderRadius: '4px', fontWeight: 'bold', zIndex: 10 }}>SOLD</div>
+                        <div style={{ position: 'absolute', top: 15, right: 15, zIndex: 10 }}>
+                          <span className="badge badge-danger">SOLD</span>
+                        </div>
                       )}
                     </div>
                     <div className="service-content">
@@ -64,8 +66,8 @@ export default async function PropertiesPage() {
                         {property.description}
                       </p>
                       <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '1px' }}>{property.category}</span>
-                        <Link href={`/properties/${property.id}`} className="btn-primary" style={{ textDecoration: 'none' }}>View Details</Link>
+                        <span className="badge badge-gold" style={{ fontSize: '0.75rem' }}>{property.category}</span>
+                        <Link href={`/properties/${property.id}`} className="read-more">View Details <i className="fa-solid fa-arrow-right"></i></Link>
                       </div>
                     </div>
                   </div>
