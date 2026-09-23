@@ -91,25 +91,23 @@ export default function Home() {
         {/* Sticky Viewport */}
         <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: '#000' }}>
           
-          {/* High-End Drone Video (YouTube embed prevents 403 blocks) */}
-          <div style={{ position: 'absolute', top: '50%', left: '50%', width: '100vw', height: '100vh', transform: 'translate(-50%, -50%)', pointerEvents: 'none', overflow: 'hidden' }}>
-            <iframe
-              src="https://www.youtube.com/embed/2v_7UH_nLv4?autoplay=1&mute=1&controls=0&loop=1&playlist=2v_7UH_nLv4&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1"
-              style={{
-                width: '100vw',
-                height: '56.25vw', /* 16:9 aspect ratio */
-                minHeight: '100vh',
-                minWidth: '177.77vh', /* 16:9 aspect ratio */
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                border: 'none',
-              }}
-              allow="autoplay; encrypted-media"
-              title="Drone Background"
-            ></iframe>
-          </div>
+          {/* Local Cinematic Video Background */}
+          <video 
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          >
+            <source src="/cinematic-drone.mp4" type="video/mp4" />
+          </video>
           
           {/* Dynamic Dark Overlay */}
           <motion.div 
