@@ -43,3 +43,6 @@ next-env.d.ts
 /src/generated/prisma
 dev.db
 *.tar.gz
+*.mp4
+setup_vps.sh
+Godavari Hospitality logo .png

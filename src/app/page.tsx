@@ -74,9 +74,21 @@ export default function Home() {
       {/* Navbar stays the same */}
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`} style={{ zIndex: 10000, background: isScrolled ? 'rgba(0,0,0,0.8)' : 'transparent', backdropFilter: 'blur(10px)' }}>
         <div className="container nav-container">
-          <Link href="/" className="logo" style={{ color: '#ffffff', letterSpacing: '2px', fontWeight: 300 }}>
-            <span className="logo-icon" style={{ color: '#ffffff' }}><i className="fa-solid fa-building-columns"></i></span>
-            GODAWARI
+          <Link href="/" className="logo" style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            background: 'rgba(255, 255, 255, 0.94)', 
+            backdropFilter: 'blur(8px)', 
+            padding: '5px 14px', 
+            borderRadius: '10px', 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)', 
+            border: '1px solid rgba(212, 175, 55, 0.3)' 
+          }}>
+            <img 
+              src="/logo.png" 
+              alt="Godavari Hospitality & Realities" 
+              style={{ height: '36px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+            />
           </Link>
           <ul className={`nav-links ${menuActive ? 'active' : ''}`}>
             <li><a href="#home" onClick={closeMenu} style={{ color: '#ffffff' }}>Home</a></li>
@@ -295,10 +307,22 @@ export default function Home() {
         <div className="container">
           <div className="footer-grid">
             <div className="footer-about">
-              <a href="#" className="logo footer-logo" style={{ color: '#ffffff' }}>
-                <span className="logo-icon" style={{ color: '#ffffff' }}><i className="fa-solid fa-building-columns"></i></span>
-                GODAWARI
-              </a>
+              <Link href="/" className="logo footer-logo" style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                background: 'rgba(255, 255, 255, 0.94)', 
+                padding: '8px 18px', 
+                borderRadius: '12px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)', 
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                marginBottom: '16px' 
+              }}>
+                <img 
+                  src="/logo.png" 
+                  alt="Godavari Hospitality & Realities" 
+                  style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+                />
+              </Link>
               <p style={{ color: '#ffffff', fontWeight: 300, opacity: 0.9 }}>Excellence in luxury real estate, bespoke construction, and distinguished hospitality.</p>
               <div className="social-links">
                 <a href="#" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)' }}><i className="fa-brands fa-facebook-f"></i></a>

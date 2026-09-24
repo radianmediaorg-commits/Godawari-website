@@ -32,9 +32,12 @@ export default async function UnitDetailsPage({ params }: { params: Promise<{ id
       `}</style>
       <nav className="navbar scrolled">
         <div className="container nav-container">
-          <Link href="/" className="logo">
-            <span className="logo-icon"><i className="fa-solid fa-building-columns"></i></span>
-            Godawari
+          <Link href="/" className="logo" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <img 
+              src="/logo-white-text.png" 
+              alt="Godavari Hospitality & Realities" 
+              style={{ height: '44px', width: 'auto', objectFit: 'contain' }} 
+            />
           </Link>
           <ul className="nav-links">
             <li><Link href="/">Home</Link></li>

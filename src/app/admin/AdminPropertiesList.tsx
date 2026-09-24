@@ -160,257 +160,676 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
     }
   };
 
+  const getCoverImage = (imagesStr: any) => {
+    if (!imagesStr) return null;
+    try {
+      const parsed = typeof imagesStr === 'string' ? JSON.parse(imagesStr) : imagesStr;
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+    } catch {
+      return typeof imagesStr === 'string' ? imagesStr : null;
+    }
+  };
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-        <h2>Manage Properties</h2>
-        <button onClick={() => handleOpenModal()} className="btn-primary" style={{ padding: '10px 20px' }}>+ Add New Property</button>
+      {/* Action Toolbar */}
+      <div className="admin-toolbar">
+        <div>
+          <h2 style={{
+            fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
+            fontSize: '1.5rem',
+            color: '#ffffff',
+            margin: '0 0 4px 0',
+            fontWeight: 400
+          }}>
+            Manage Properties
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, fontWeight: 300 }}>
+            Curate, edit, and monitor your luxury real estate developments and inquiries.
+          </p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()} 
+          className="admin-btn-gold"
+        >
+          <i className="fa-solid fa-plus"></i>
+          <span>Add New Property</span>
+        </button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: '8px', overflowX: 'auto', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
-        <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ background: 'var(--primary-color)', color: 'white' }}>
-            <tr>
-              <th style={{ padding: '15px' }}>Title</th>
-              <th style={{ padding: '15px' }}>Category</th>
-              <th style={{ padding: '15px' }}>Status</th>
-              <th style={{ padding: '15px' }}>Leads</th>
-              <th style={{ padding: '15px', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {properties.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px' }}>{p.title}</td>
-                <td style={{ padding: '15px' }}>{p.category}</td>
-                <td style={{ padding: '15px' }}>
-                  <span style={{ padding: '5px 10px', borderRadius: '4px', background: p.status === 'AVAILABLE' ? '#e8f5e9' : '#ffebee', color: p.status === 'AVAILABLE' ? '#2e7d32' : '#c62828', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                    {p.status}
-                  </span>
-                </td>
-                <td style={{ padding: '15px' }}>
-                  <span style={{ padding: '5px 10px', borderRadius: '4px', background: '#e3f2fd', color: '#1565c0', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                    {p.leads?.length || 0} Lead{p.leads?.length === 1 ? '' : 's'}
-                  </span>
-                </td>
-                <td style={{ padding: '15px', textAlign: 'right' }}>
-                  <button onClick={() => setViewingLeadsId(p.id)} style={{ background: 'none', border: 'none', color: '#1565c0', cursor: 'pointer', marginRight: '15px' }}><i className="fa-solid fa-users"></i> Leads</button>
-                  <button onClick={() => handleOpenModal(p)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', marginRight: '15px' }}><i className="fa-solid fa-pen-to-square"></i> Edit</button>
-                  <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><i className="fa-solid fa-trash"></i> Delete</button>
-                </td>
-              </tr>
-            ))}
-            {properties.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-light)' }}>No properties found. Click "Add New Property" to create one.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Empty State */}
+      {properties.length === 0 && (
+        <div className="admin-empty-card">
+          <div className="admin-empty-icon">
+            <i className="fa-solid fa-hotel"></i>
+          </div>
+          <h3 className="admin-empty-title">No Properties Listed Yet</h3>
+          <p className="admin-empty-desc">
+            Your portfolio is currently empty. Begin by publishing your first landmark land development, estate, or suite.
+          </p>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="admin-btn-gold"
+            style={{ width: 'auto', display: 'inline-flex' }}
+          >
+            <i className="fa-solid fa-plus"></i>
+            <span>Add First Property</span>
+          </button>
+        </div>
+      )}
 
-      {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '15px' }}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--primary-color)' }}>{editingId ? 'Edit Property' : 'Add New Property'}</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="contact-form">
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Property Title</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Description</label>
-                <textarea rows={4} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} required></textarea>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Address</label>
-                <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder="e.g. 123 Main St, City" />
-              </div>
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Category</label>
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} required>
-                    <option value="Hospitality">Hospitality</option>
-                    <option value="Real Estate">Real Estate</option>
-                    <option value="Construction">Construction</option>
-                    <option value="Land Development">Land Development</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Status</label>
-                <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} required>
-                  <option value="AVAILABLE">AVAILABLE</option>
-                  <option value="SOLD">SOLD</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Brochure (PDF)</label>
-                  {formData.existingBrochure && (
-                    <div style={{ marginBottom: '5px' }}>
-                      <a href={formData.existingBrochure} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>View Current Brochure</a>
-                    </div>
-                  )}
-                  <input type="file" accept="application/pdf" onChange={e => setNewBrochureFile(e.target.files ? e.target.files[0] : null)} />
-                  <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload a new PDF to replace the existing one.</small>
-                </div>
-                <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Contact Phone</label>
-                  <input type="text" placeholder="+1234567890" value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Property Photo (Cover Image)</label>
-                {formData.existingImages.length > 0 && newImageFiles.length === 0 && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <div style={{ position: 'relative', width: '150px', height: '100px' }}>
-                      <img src={formData.existingImages[0]} alt="Current Cover" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                    </div>
-                  </div>
-                )}
-                {newImageFiles.length > 0 && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <div style={{ position: 'relative', width: '150px', height: '100px' }}>
-                      <img src={URL.createObjectURL(newImageFiles[0])} alt="New Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                    </div>
-                  </div>
-                )}
-                <input type="file" accept="image/*" onChange={e => {
-                  if (e.target.files && e.target.files[0]) {
-                    setNewImageFiles([e.target.files[0]]);
-                  }
-                  e.target.value = '';
-                }} />
-                <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '5px' }}>Upload a new photo (this will replace the current one).</small>
-              </div>
-              
-              <div style={{ marginTop: '30px', marginBottom: '20px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h4 style={{ margin: 0, color: 'var(--primary-color)' }}>Sub-properties / Units</h4>
-                  <button type="button" onClick={() => setFormData({...formData, units: [...formData.units, { title: '', description: '', price: '', size: '', existingImages: [], newImagesFiles: [], status: 'AVAILABLE' }]})} style={{ background: 'white', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>+ Add Unit</button>
-                </div>
-                
-                {formData.units.length === 0 ? (
-                  <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '0.9rem' }}>No units added yet.</p>
+      {/* Mobile Card Layout (Visible on screens <= 768px) */}
+      <div className="admin-mobile-list">
+        {properties.map(p => {
+          const cover = getCoverImage(p.images);
+          return (
+            <div key={p.id} className="admin-prop-card">
+              <div className="admin-prop-card-top">
+                {cover ? (
+                  <img src={cover} alt={p.title} className="admin-prop-img" />
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    {formData.units.map((unit, index) => (
-                      <div key={index} style={{ background: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #ddd' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <strong>Unit #{index + 1}</strong>
-                          <button type="button" onClick={() => setFormData({...formData, units: formData.units.filter((_, i) => i !== index)})} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}>&times; Remove</button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '15px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                          <div style={{ flex: '1', minWidth: '150px' }}>
-                            <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Title (e.g. Penthouse, 2BHK)</label>
-                            <input type="text" value={unit.title} onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].title = e.target.value; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} required />
+                  <div className="admin-prop-img-placeholder">
+                    <i className="fa-solid fa-building"></i>
+                  </div>
+                )}
+                <div className="admin-prop-meta">
+                  <div className="admin-prop-tags">
+                    <span className="admin-pill-cat">{p.category}</span>
+                    <span className={`admin-pill-status ${p.status === 'AVAILABLE' ? 'status-available' : 'status-sold'}`}>
+                      {p.status}
+                    </span>
+                  </div>
+                  <h3 className="admin-prop-title">{p.title}</h3>
+                  {p.address && (
+                    <p className="admin-prop-address">
+                      <i className="fa-solid fa-location-dot" style={{ fontSize: '10px', color: '#d4af37' }}></i>
+                      <span>{p.address}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="admin-prop-card-stats">
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className="fa-solid fa-layer-group" style={{ color: '#d4af37' }}></i>
+                  <span>{p.units?.length || 0} Sub-unit{p.units?.length === 1 ? '' : 's'}</span>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#7dd3fc' }}>
+                  <i className="fa-solid fa-envelope-open-text"></i>
+                  <span>{p.leads?.length || 0} Lead{p.leads?.length === 1 ? '' : 's'}</span>
+                </span>
+              </div>
+
+              <div className="admin-prop-card-actions">
+                <button
+                  onClick={() => setViewingLeadsId(p.id)}
+                  className="admin-action-btn btn-leads"
+                >
+                  <i className="fa-solid fa-users"></i>
+                  <span>Leads ({p.leads?.length || 0})</span>
+                </button>
+                <button
+                  onClick={() => handleOpenModal(p)}
+                  className="admin-action-btn btn-edit"
+                >
+                  <i className="fa-solid fa-pen-to-square"></i>
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="admin-action-btn btn-delete"
+                >
+                  <i className="fa-solid fa-trash"></i>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table Layout (Visible on screens > 768px) */}
+      {properties.length > 0 && (
+        <div className="admin-desktop-table-card">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Sub-units</th>
+                <th>Leads</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map(p => {
+                const cover = getCoverImage(p.images);
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="admin-table-item">
+                        {cover ? (
+                          <img src={cover} alt={p.title} className="admin-table-thumb" />
+                        ) : (
+                          <div className="admin-table-thumb-placeholder">
+                            <i className="fa-solid fa-building"></i>
                           </div>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Size (e.g. 1200 sqft)</label>
-                            <input type="text" value={unit.size || ''} onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].size = e.target.value; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                          <div style={{ flex: '1', minWidth: '150px' }}>
-                            <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Price</label>
-                            <input type="number" value={unit.price || ''} onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].price = e.target.value; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Status</label>
-                            <select value={unit.status} onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].status = e.target.value; setFormData({...formData, units: newUnits}); }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                              <option value="AVAILABLE">AVAILABLE</option>
-                              <option value="SOLD">SOLD</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div style={{ marginTop: '10px' }}>
-                          <label style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Unit Images</label>
-                          {unit.existingImages?.length > 0 && (
-                            <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
-                              {unit.existingImages.map((img: string, i: number) => (
-                                <div key={i} style={{ position: 'relative', minWidth: '60px', height: '40px' }}>
-                                  <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                                  <button type="button" onClick={() => { const newUnits = [...formData.units]; newUnits[index].existingImages = newUnits[index].existingImages.filter((_: any, idx: number) => idx !== i); setFormData({...formData, units: newUnits}); }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '15px', height: '15px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
-                                </div>
-                              ))}
+                        )}
+                        <div>
+                          <div className="admin-table-title">{p.title}</div>
+                          {p.address && (
+                            <div className="admin-table-address">
+                              <i className="fa-solid fa-location-dot" style={{ fontSize: '10px', color: '#d4af37', marginRight: '4px' }}></i>
+                              {p.address}
                             </div>
                           )}
-                          {unit.newImagesFiles?.length > 0 && (
-                            <div style={{ marginBottom: '10px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
-                              {unit.newImagesFiles.map((file: File, i: number) => (
-                                <div key={i} style={{ position: 'relative', minWidth: '60px', height: '40px' }}>
-                                  <img src={URL.createObjectURL(file)} alt={`New Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                                  <button type="button" onClick={() => { const newUnits = [...formData.units]; newUnits[index].newImagesFiles = newUnits[index].newImagesFiles.filter((_: any, idx: number) => idx !== i); setFormData({...formData, units: newUnits}); }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '15px', height: '15px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&times;</button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <input type="file" multiple accept="image/*" onChange={(e) => { 
-                            if (e.target.files) {
-                              const newUnits = [...formData.units]; 
-                              newUnits[index].newImagesFiles = [...(newUnits[index].newImagesFiles || []), ...Array.from(e.target.files)]; 
-                              setFormData({...formData, units: newUnits}); 
-                            }
-                            e.target.value = '';
-                          }} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </td>
+                    <td>
+                      <span className="admin-pill-cat">{p.category}</span>
+                    </td>
+                    <td>
+                      <span className={`admin-pill-status ${p.status === 'AVAILABLE' ? 'status-available' : 'status-sold'}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                        {p.units?.length || 0} Unit{p.units?.length === 1 ? '' : 's'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => setViewingLeadsId(p.id)}
+                        className="admin-action-btn btn-leads"
+                        style={{ padding: '6px 12px' }}
+                      >
+                        <i className="fa-solid fa-users"></i>
+                        <span>{p.leads?.length || 0} Lead{p.leads?.length === 1 ? '' : 's'}</span>
+                      </button>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => handleOpenModal(p)} 
+                          className="admin-action-btn btn-edit"
+                          title="Edit Property"
+                        >
+                          <i className="fa-solid fa-pen-to-square"></i>
+                          <span>Edit</span>
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(p.id)} 
+                          className="admin-action-btn btn-delete"
+                          title="Delete Property"
+                        >
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-              <button type="submit" className="btn-primary w-100" disabled={loading}>
-                {loading ? 'Uploading & Saving...' : 'Save Property'}
+      {/* Edit / Add Property Modal */}
+      {isModalOpen && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-dialog">
+            {/* Modal Header */}
+            <div className="admin-modal-header">
+              <div>
+                <h3 className="admin-modal-title">
+                  {editingId ? 'Edit Property Listing' : 'Add Luxury Property'}
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                  Enter accurate specifications for Godawari's exclusive catalog.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="admin-modal-close"
+              >
+                &times;
               </button>
-            </form>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="admin-modal-body">
+              <form id="property-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div className="admin-form-group">
+                  <label className="admin-label">Property Title *</label>
+                  <input 
+                    type="text" 
+                    value={formData.title} 
+                    onChange={e => setFormData({...formData, title: e.target.value})} 
+                    className="admin-input"
+                    placeholder="e.g. Godawari Serenity Estates"
+                    required 
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Description *</label>
+                  <textarea 
+                    rows={3} 
+                    value={formData.description} 
+                    onChange={e => setFormData({...formData, description: e.target.value})} 
+                    className="admin-textarea"
+                    placeholder="Detail the landmark location, architecture, views, and lifestyle amenities..."
+                    required
+                  ></textarea>
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Address</label>
+                  <input 
+                    type="text" 
+                    value={formData.address} 
+                    onChange={e => setFormData({...formData, address: e.target.value})} 
+                    className="admin-input"
+                    placeholder="e.g. VIP Road, Solapur" 
+                  />
+                </div>
+
+                <div className="admin-grid-2">
+                  <div className="admin-form-group">
+                    <label className="admin-label">Category *</label>
+                    <select 
+                      value={formData.category} 
+                      onChange={e => setFormData({...formData, category: e.target.value})} 
+                      className="admin-select"
+                      required
+                    >
+                      <option value="Hospitality">Hospitality</option>
+                      <option value="Real Estate">Real Estate</option>
+                      <option value="Construction">Construction</option>
+                      <option value="Land Development">Land Development</option>
+                    </select>
+                  </div>
+
+                  <div className="admin-form-group">
+                    <label className="admin-label">Status *</label>
+                    <select 
+                      value={formData.status} 
+                      onChange={e => setFormData({...formData, status: e.target.value})} 
+                      className="admin-select"
+                      required
+                    >
+                      <option value="AVAILABLE">AVAILABLE</option>
+                      <option value="SOLD">SOLD</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="admin-grid-2">
+                  <div className="admin-form-group">
+                    <label className="admin-label">Brochure (PDF)</label>
+                    {formData.existingBrochure && (
+                      <div style={{ marginBottom: '6px' }}>
+                        <a href={formData.existingBrochure} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: '#d4af37', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <i className="fa-solid fa-file-pdf"></i>
+                          <span>View Current Brochure</span>
+                        </a>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="application/pdf" 
+                      onChange={e => setNewBrochureFile(e.target.files ? e.target.files[0] : null)} 
+                      style={{ fontSize: '0.8rem', color: '#94a3b8' }}
+                    />
+                  </div>
+
+                  <div className="admin-form-group">
+                    <label className="admin-label">Contact Phone</label>
+                    <input 
+                      type="text" 
+                      placeholder="+91 98765 43210" 
+                      value={formData.contactPhone} 
+                      onChange={e => setFormData({...formData, contactPhone: e.target.value})} 
+                      className="admin-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Cover Image */}
+                <div className="admin-form-group">
+                  <label className="admin-label">Property Cover Photo</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                    {formData.existingImages.length > 0 && newImageFiles.length === 0 && (
+                      <img 
+                        src={formData.existingImages[0]} 
+                        alt="Current Cover" 
+                        style={{ width: '90px', height: '65px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(212, 175, 55, 0.4)' }} 
+                      />
+                    )}
+                    {newImageFiles.length > 0 && (
+                      <img 
+                        src={URL.createObjectURL(newImageFiles[0])} 
+                        alt="New Cover Preview" 
+                        style={{ width: '90px', height: '65px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #d4af37' }} 
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            setNewImageFiles([e.target.files[0]]);
+                          }
+                          e.target.value = '';
+                        }} 
+                        style={{ fontSize: '0.8rem', color: '#94a3b8' }}
+                      />
+                      <small style={{ color: '#64748b', display: 'block', marginTop: '4px', fontSize: '0.75rem' }}>
+                        Upload high-resolution photography for the hero card.
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Sub-units Section */}
+                <div className="admin-subunits-box">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ffffff' }}>Sub-units / Floor Plans</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Configure individual villas, plots, or suites.</div>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData({...formData, units: [...formData.units, { title: '', description: '', price: '', size: '', existingImages: [], newImagesFiles: [], status: 'AVAILABLE' }]})} 
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(212, 175, 55, 0.15)',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        borderRadius: '8px',
+                        color: '#fef08a',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Add Unit
+                    </button>
+                  </div>
+                  
+                  {formData.units.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', fontSize: '0.8rem', color: '#64748b' }}>
+                      No sub-units added yet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {formData.units.map((unit, index) => (
+                        <div key={index} className="admin-unit-item">
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#d4af37', textTransform: 'uppercase', letterSpacing: '1px' }}>Unit #{index + 1}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({...formData, units: formData.units.filter((_, i) => i !== index)})} 
+                              style={{ background: 'none', border: 'none', color: '#fca5a5', fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              &times; Remove
+                            </button>
+                          </div>
+
+                          <div className="admin-grid-2">
+                            <div>
+                              <label className="admin-label" style={{ fontSize: '0.7rem' }}>Title *</label>
+                              <input 
+                                type="text" 
+                                value={unit.title} 
+                                onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].title = e.target.value; setFormData({...formData, units: newUnits}); }} 
+                                placeholder="e.g. Royal Villa, 4BHK"
+                                className="admin-input" 
+                                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                                required 
+                              />
+                            </div>
+                            <div>
+                              <label className="admin-label" style={{ fontSize: '0.7rem' }}>Size</label>
+                              <input 
+                                type="text" 
+                                value={unit.size || ''} 
+                                onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].size = e.target.value; setFormData({...formData, units: newUnits}); }} 
+                                placeholder="e.g. 3,200 sq.ft."
+                                className="admin-input" 
+                                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="admin-grid-2">
+                            <div>
+                              <label className="admin-label" style={{ fontSize: '0.7rem' }}>Price</label>
+                              <input 
+                                type="number" 
+                                value={unit.price || ''} 
+                                onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].price = e.target.value; setFormData({...formData, units: newUnits}); }} 
+                                placeholder="Amount in ₹"
+                                className="admin-input" 
+                                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label className="admin-label" style={{ fontSize: '0.7rem' }}>Status</label>
+                              <select 
+                                value={unit.status} 
+                                onChange={(e) => { const newUnits = [...formData.units]; newUnits[index].status = e.target.value; setFormData({...formData, units: newUnits}); }} 
+                                className="admin-select"
+                                style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                              >
+                                <option value="AVAILABLE">AVAILABLE</option>
+                                <option value="SOLD">SOLD</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="admin-label" style={{ fontSize: '0.7rem' }}>Unit Photos</label>
+                            {(unit.existingImages?.length > 0 || unit.newImagesFiles?.length > 0) && (
+                              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
+                                {unit.existingImages?.map((img: string, i: number) => (
+                                  <div key={i} style={{ position: 'relative', width: '60px', height: '45px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.2)' }}>
+                                    <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button 
+                                      type="button" 
+                                      onClick={() => { const newUnits = [...formData.units]; newUnits[index].existingImages = newUnits[index].existingImages.filter((_: any, idx: number) => idx !== i); setFormData({...formData, units: newUnits}); }} 
+                                      style={{ position: 'absolute', top: 2, right: 2, width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: 'none', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                      &times;
+                                    </button>
+                                  </div>
+                                ))}
+                                {unit.newImagesFiles?.map((file: File, i: number) => (
+                                  <div key={i} style={{ position: 'relative', width: '60px', height: '45px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid #d4af37' }}>
+                                    <img src={URL.createObjectURL(file)} alt={`New ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button 
+                                      type="button" 
+                                      onClick={() => { const newUnits = [...formData.units]; newUnits[index].newImagesFiles = newUnits[index].newImagesFiles.filter((_: any, idx: number) => idx !== i); setFormData({...formData, units: newUnits}); }} 
+                                      style={{ position: 'absolute', top: 2, right: 2, width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', color: '#fff', border: 'none', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                      &times;
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <input 
+                              type="file" 
+                              multiple 
+                              accept="image/*" 
+                              onChange={(e) => { 
+                                if (e.target.files) {
+                                  const newUnits = [...formData.units]; 
+                                  newUnits[index].newImagesFiles = [...(newUnits[index].newImagesFiles || []), ...Array.from(e.target.files)]; 
+                                  setFormData({...formData, units: newUnits}); 
+                                }
+                                e.target.value = '';
+                              }} 
+                              style={{ fontSize: '0.75rem', color: '#94a3b8' }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="admin-modal-footer">
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)}
+                className="admin-btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                form="property-form"
+                disabled={loading}
+                className="admin-btn-gold"
+                style={{ width: 'auto', padding: '10px 24px' }}
+              >
+                {loading ? 'Saving...' : 'Save Property'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Leads Viewer Modal */}
       {viewingLeadsId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '15px' }}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--primary-color)' }}>
-                Leads for {properties.find(p => p.id === viewingLeadsId)?.title}
-              </h3>
-              <button onClick={() => setViewingLeadsId(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-dialog">
+            {/* Leads Modal Header */}
+            <div className="admin-modal-header">
+              <div style={{ paddingRight: '16px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#38bdf8', marginBottom: '2px' }}>
+                  Client Inquiries
+                </div>
+                <h3 className="admin-modal-title" style={{ fontSize: '1.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>
+                  {properties.find(p => p.id === viewingLeadsId)?.title}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setViewingLeadsId(null)} 
+                className="admin-modal-close"
+              >
+                &times;
+              </button>
             </div>
             
-            {properties.find(p => p.id === viewingLeadsId)?.leads?.length === 0 ? (
-              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-light)', background: '#f8f9fa', borderRadius: '8px' }}>
-                No leads received for this property yet.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {properties.find(p => p.id === viewingLeadsId)?.leads?.map((lead: any) => (
-                  <div key={lead.id} style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', background: '#fafafa' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <h4 style={{ margin: 0, color: 'var(--primary-color)' }}>{lead.name}</h4>
-                      <small style={{ color: 'var(--text-light)' }}>{new Date(lead.createdAt).toLocaleString()}</small>
-                    </div>
-                    <div style={{ display: 'flex', gap: '20px', marginBottom: '15px', flexWrap: 'wrap' }}>
-                      <a href={`mailto:${lead.email}`} style={{ color: 'var(--accent-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <i className="fa-solid fa-envelope"></i> {lead.email}
-                      </a>
-                      <a href={`tel:${lead.phone}`} style={{ color: 'var(--accent-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <i className="fa-solid fa-phone"></i> {lead.phone}
-                      </a>
-                    </div>
-                    <div style={{ background: 'white', padding: '15px', borderRadius: '4px', border: '1px solid #eee' }}>
-                      <strong>Message:</strong>
-                      <p style={{ margin: '5px 0 0 0', whiteSpace: 'pre-wrap', color: 'var(--text-light)' }}>{lead.message}</p>
-                    </div>
+            {/* Leads Modal Body */}
+            <div className="admin-modal-body">
+              {properties.find(p => p.id === viewingLeadsId)?.leads?.length === 0 ? (
+                <div style={{ padding: '40px 16px', textAlign: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto', fontSize: '1.25rem' }}>
+                    <i className="fa-solid fa-inbox"></i>
                   </div>
-                ))}
-              </div>
-            )}
+                  <h4 style={{ fontSize: '1.1rem', color: '#ffffff', margin: '0 0 6px 0', fontWeight: 500 }}>No Inquiries Yet</h4>
+                  <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
+                    Inquiries submitted from the property catalog will appear here in real-time.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {properties.find(p => p.id === viewingLeadsId)?.leads?.map((lead: any) => (
+                    <div key={lead.id} style={{
+                      padding: '16px',
+                      background: 'rgba(2, 6, 23, 0.6)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>{lead.name}</h4>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{new Date(lead.createdAt).toLocaleString()}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {lead.email && (
+                          <a 
+                            href={`mailto:${lead.email}`} 
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: 'rgba(56, 189, 248, 0.1)',
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              color: '#7dd3fc',
+                              fontSize: '0.75rem',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <i className="fa-solid fa-envelope"></i>
+                            <span>{lead.email}</span>
+                          </a>
+                        )}
+                        {lead.phone && (
+                          <a 
+                            href={`tel:${lead.phone}`} 
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              color: '#6ee7b7',
+                              fontSize: '0.75rem',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <i className="fa-solid fa-phone"></i>
+                            <span>{lead.phone}</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {lead.message && (
+                        <div style={{
+                          background: 'rgba(15, 23, 42, 0.8)',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          fontSize: '0.8rem',
+                          color: '#cbd5e1'
+                        }}>
+                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Message</span>
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{lead.message}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Leads Modal Footer */}
+            <div className="admin-modal-footer">
+              <button 
+                onClick={() => setViewingLeadsId(null)}
+                className="admin-btn-secondary"
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                Close Inquiries
+              </button>
+            </div>
           </div>
         </div>
       )}
