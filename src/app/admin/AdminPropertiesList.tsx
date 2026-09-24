@@ -19,8 +19,150 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
   const [newBrochureFile, setNewBrochureFile] = useState<File | null>(null);
   
   const [loading, setLoading] = useState(false);
-  const [viewingLeadsId, setViewingLeadsId] = useState<string | null>(null);
+  const [viewingLeadsPropertyId, setViewingLeadsPropertyId] = useState<string | 'ALL' | null>(null);
+  const [leadsDatePreset, setLeadsDatePreset] = useState<'all' | 'today' | '7days' | '30days' | 'month' | 'custom'>('all');
+  const [leadsStartDate, setLeadsStartDate] = useState<string>('');
+  const [leadsEndDate, setLeadsEndDate] = useState<string>('');
+  const [leadsSearch, setLeadsSearch] = useState<string>('');
+  const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
   const router = useRouter();
+
+  const handleOpenLeads = (propId: string | 'ALL' = 'ALL') => {
+    setViewingLeadsPropertyId(propId);
+    setLeadsDatePreset('all');
+    setLeadsStartDate('');
+    setLeadsEndDate('');
+    setLeadsSearch('');
+  };
+
+  const handleSelectDatePreset = (preset: 'all' | 'today' | '7days' | '30days' | 'month' | 'custom') => {
+    setLeadsDatePreset(preset);
+    const now = new Date();
+    const formatYMD = (d: Date) => d.toISOString().slice(0, 10);
+
+    if (preset === 'all') {
+      setLeadsStartDate('');
+      setLeadsEndDate('');
+    } else if (preset === 'today') {
+      const today = formatYMD(now);
+      setLeadsStartDate(today);
+      setLeadsEndDate(today);
+    } else if (preset === '7days') {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      setLeadsStartDate(formatYMD(past));
+      setLeadsEndDate(formatYMD(now));
+    } else if (preset === '30days') {
+      const past = new Date();
+      past.setDate(past.getDate() - 30);
+      setLeadsStartDate(formatYMD(past));
+      setLeadsEndDate(formatYMD(now));
+    } else if (preset === 'month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setLeadsStartDate(formatYMD(firstDay));
+      setLeadsEndDate(formatYMD(now));
+    }
+  };
+
+  // Compile all leads flattened across properties
+  const allLeads = properties.flatMap(p => 
+    (p.leads || []).map((lead: any) => ({
+      ...lead,
+      propertyId: p.id,
+      propertyTitle: p.title,
+      propertyCategory: p.category
+    }))
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Filter leads based on selected property, date range, and search query
+  const filteredLeads = allLeads.filter(lead => {
+    if (viewingLeadsPropertyId && viewingLeadsPropertyId !== 'ALL') {
+      if (lead.propertyId !== viewingLeadsPropertyId) return false;
+    }
+    if (leadsStartDate) {
+      const start = new Date(leadsStartDate);
+      start.setHours(0, 0, 0, 0);
+      if (new Date(lead.createdAt) < start) return false;
+    }
+    if (leadsEndDate) {
+      const end = new Date(leadsEndDate);
+      end.setHours(23, 59, 59, 999);
+      if (new Date(lead.createdAt) > end) return false;
+    }
+    if (leadsSearch.trim()) {
+      const q = leadsSearch.toLowerCase().trim();
+      const matchName = lead.name?.toLowerCase().includes(q);
+      const matchEmail = lead.email?.toLowerCase().includes(q);
+      const matchPhone = lead.phone?.toLowerCase().includes(q);
+      const matchMsg = lead.message?.toLowerCase().includes(q);
+      const matchProp = lead.propertyTitle?.toLowerCase().includes(q);
+      if (!matchName && !matchEmail && !matchPhone && !matchMsg && !matchProp) return false;
+    }
+    return true;
+  });
+
+  // Export filtered contacts list to CSV
+  const handleExportCSV = () => {
+    if (filteredLeads.length === 0) {
+      alert('No leads to export with the current date/filter selection.');
+      return;
+    }
+
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const val = String(str).replace(/"/g, '""');
+      return `"${val}"`;
+    };
+
+    const headers = [
+      'Submission Date',
+      'Client Name',
+      'Phone Number',
+      'Email Address',
+      'Property',
+      'Category',
+      'Inquiry Message'
+    ];
+
+    const rows = filteredLeads.map(l => [
+      escapeCsv(new Date(l.createdAt).toLocaleString()),
+      escapeCsv(l.name),
+      escapeCsv(l.phone),
+      escapeCsv(l.email),
+      escapeCsv(l.propertyTitle),
+      escapeCsv(l.propertyCategory),
+      escapeCsv(l.message)
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\r\n');
+
+    // Add UTF-8 BOM so Excel opens with proper accents and formatting
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const propName = viewingLeadsPropertyId && viewingLeadsPropertyId !== 'ALL'
+      ? properties.find(p => p.id === viewingLeadsPropertyId)?.title.replace(/[^a-zA-Z0-9]/g, '_')
+      : 'All_Properties';
+
+    link.setAttribute('download', `Godavari_Contacts_${propName}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyContact = (lead: any) => {
+    const text = `${lead.name} | Phone: ${lead.phone || 'N/A'} | Email: ${lead.email || 'N/A'}`;
+    navigator.clipboard.writeText(text);
+    setCopiedLeadId(lead.id);
+    setTimeout(() => setCopiedLeadId(null), 2000);
+  };
 
   const handleOpenModal = (property?: any) => {
     if (property) {
@@ -188,13 +330,25 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
             Curate, edit, and monitor your luxury real estate developments and inquiries.
           </p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()} 
-          className="admin-btn-gold"
-        >
-          <i className="fa-solid fa-plus"></i>
-          <span>Add New Property</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button 
+            type="button"
+            onClick={() => handleOpenLeads('ALL')}
+            className="admin-btn-cyan"
+            title="Inspect all inquiries, filter by dates, and export contacts"
+          >
+            <i className="fa-solid fa-address-book"></i>
+            <span>Leads & Contacts ({allLeads.length})</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => handleOpenModal()} 
+            className="admin-btn-gold"
+          >
+            <i className="fa-solid fa-plus"></i>
+            <span>Add New Property</span>
+          </button>
+        </div>
       </div>
 
       {/* Empty State */}
@@ -208,6 +362,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
             Your portfolio is currently empty. Begin by publishing your first landmark land development, estate, or suite.
           </p>
           <button 
+            type="button"
             onClick={() => handleOpenModal()}
             className="admin-btn-gold"
             style={{ width: 'auto', display: 'inline-flex' }}
@@ -226,7 +381,15 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
             <div key={p.id} className="admin-prop-card">
               <div className="admin-prop-card-top">
                 {cover ? (
-                  <img src={cover} alt={p.title} className="admin-prop-img" />
+                  <a 
+                    href={`/properties/${p.id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    title="Open live property in new tab"
+                    style={{ display: 'block' }}
+                  >
+                    <img src={cover} alt={p.title} className="admin-prop-img" />
+                  </a>
                 ) : (
                   <div className="admin-prop-img-placeholder">
                     <i className="fa-solid fa-building"></i>
@@ -239,7 +402,18 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                       {p.status}
                     </span>
                   </div>
-                  <h3 className="admin-prop-title">{p.title}</h3>
+                  <h3 className="admin-prop-title">
+                    <a 
+                      href={`/properties/${p.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="admin-prop-title-link"
+                      title="Open live property in a new tab"
+                    >
+                      <span>{p.title}</span>
+                      <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '11px', opacity: 0.7 }}></i>
+                    </a>
+                  </h3>
                   {p.address && (
                     <p className="admin-prop-address">
                       <i className="fa-solid fa-location-dot" style={{ fontSize: '10px', color: '#d4af37' }}></i>
@@ -261,23 +435,39 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
               </div>
 
               <div className="admin-prop-card-actions">
+                <a
+                  href={`/properties/${p.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="admin-action-btn btn-view"
+                  title="Open live property page in a new tab"
+                >
+                  <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                  <span>View Live</span>
+                </a>
                 <button
-                  onClick={() => setViewingLeadsId(p.id)}
+                  type="button"
+                  onClick={() => handleOpenLeads(p.id)}
                   className="admin-action-btn btn-leads"
+                  title="View leads for this property"
                 >
                   <i className="fa-solid fa-users"></i>
                   <span>Leads ({p.leads?.length || 0})</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleOpenModal(p)}
                   className="admin-action-btn btn-edit"
+                  title="Edit Property"
                 >
                   <i className="fa-solid fa-pen-to-square"></i>
                   <span>Edit</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDelete(p.id)}
                   className="admin-action-btn btn-delete"
+                  title="Delete Property"
                 >
                   <i className="fa-solid fa-trash"></i>
                   <span>Delete</span>
@@ -310,14 +500,33 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                     <td>
                       <div className="admin-table-item">
                         {cover ? (
-                          <img src={cover} alt={p.title} className="admin-table-thumb" />
+                          <a 
+                            href={`/properties/${p.id}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="admin-table-thumb-link"
+                            title="Open live property in a new tab"
+                          >
+                            <img src={cover} alt={p.title} className="admin-table-thumb" />
+                          </a>
                         ) : (
                           <div className="admin-table-thumb-placeholder">
                             <i className="fa-solid fa-building"></i>
                           </div>
                         )}
                         <div>
-                          <div className="admin-table-title">{p.title}</div>
+                          <div className="admin-table-title">
+                            <a 
+                              href={`/properties/${p.id}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="admin-table-title-link"
+                              title="Open live property in a new tab"
+                            >
+                              <span>{p.title}</span>
+                              <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '11px', opacity: 0.7 }}></i>
+                            </a>
+                          </div>
                           {p.address && (
                             <div className="admin-table-address">
                               <i className="fa-solid fa-location-dot" style={{ fontSize: '10px', color: '#d4af37', marginRight: '4px' }}></i>
@@ -342,9 +551,11 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                     </td>
                     <td>
                       <button
-                        onClick={() => setViewingLeadsId(p.id)}
+                        type="button"
+                        onClick={() => handleOpenLeads(p.id)}
                         className="admin-action-btn btn-leads"
                         style={{ padding: '6px 12px' }}
+                        title="View leads and export contacts"
                       >
                         <i className="fa-solid fa-users"></i>
                         <span>{p.leads?.length || 0} Lead{p.leads?.length === 1 ? '' : 's'}</span>
@@ -352,7 +563,18 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '8px' }}>
+                        <a 
+                          href={`/properties/${p.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="admin-action-btn btn-view"
+                          title="Open live property in a new tab"
+                        >
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                          <span>View</span>
+                        </a>
                         <button 
+                          type="button"
                           onClick={() => handleOpenModal(p)} 
                           className="admin-action-btn btn-edit"
                           title="Edit Property"
@@ -361,6 +583,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                           <span>Edit</span>
                         </button>
                         <button 
+                          type="button"
                           onClick={() => handleDelete(p.id)} 
                           className="admin-action-btn btn-delete"
                           title="Delete Property"
@@ -707,23 +930,27 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         </div>
       )}
 
-      {/* Leads Viewer Modal */}
-      {viewingLeadsId && (
+      {/* Comprehensive Leads & Contacts Management Modal */}
+      {viewingLeadsPropertyId !== null && (
         <div className="admin-modal-overlay">
-          <div className="admin-modal-dialog">
+          <div className="admin-modal-dialog" style={{ maxWidth: '820px' }}>
             {/* Leads Modal Header */}
             <div className="admin-modal-header">
               <div style={{ paddingRight: '16px' }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#38bdf8', marginBottom: '2px' }}>
-                  Client Inquiries
+                  Client Inquiries & Contacts
                 </div>
-                <h3 className="admin-modal-title" style={{ fontSize: '1.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>
-                  {properties.find(p => p.id === viewingLeadsId)?.title}
+                <h3 className="admin-modal-title" style={{ fontSize: '1.25rem' }}>
+                  {viewingLeadsPropertyId === 'ALL' 
+                    ? 'All Client Inquiries' 
+                    : properties.find(p => p.id === viewingLeadsPropertyId)?.title}
                 </h3>
               </div>
               <button 
-                onClick={() => setViewingLeadsId(null)} 
+                type="button"
+                onClick={() => setViewingLeadsPropertyId(null)} 
                 className="admin-modal-close"
+                title="Close"
               >
                 &times;
               </button>
@@ -731,87 +958,259 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
             
             {/* Leads Modal Body */}
             <div className="admin-modal-body">
-              {properties.find(p => p.id === viewingLeadsId)?.leads?.length === 0 ? (
-                <div style={{ padding: '40px 16px', textAlign: 'center' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto', fontSize: '1.25rem' }}>
-                    <i className="fa-solid fa-inbox"></i>
+              {/* Filter & Controls Card */}
+              <div className="admin-leads-filter-card">
+                {/* Row 1: Property Selector & Search */}
+                <div className="admin-grid-2">
+                  <div>
+                    <label className="admin-label" style={{ fontSize: '0.72rem' }}>Filter by Property</label>
+                    <select
+                      value={viewingLeadsPropertyId || 'ALL'}
+                      onChange={(e) => setViewingLeadsPropertyId(e.target.value)}
+                      className="admin-select"
+                      style={{ fontSize: '0.85rem', padding: '8px 12px' }}
+                    >
+                      <option value="ALL">All Properties ({allLeads.length} Total Inquiries)</option>
+                      {properties.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.title} ({p.leads?.length || 0} leads)
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <h4 style={{ fontSize: '1.1rem', color: '#ffffff', margin: '0 0 6px 0', fontWeight: 500 }}>No Inquiries Yet</h4>
-                  <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
-                    Inquiries submitted from the property catalog will appear here in real-time.
+                  <div>
+                    <label className="admin-label" style={{ fontSize: '0.72rem' }}>Search Inquiries</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        placeholder="Search by name, phone, email, keyword..."
+                        value={leadsSearch}
+                        onChange={(e) => setLeadsSearch(e.target.value)}
+                        className="admin-input"
+                        style={{ fontSize: '0.85rem', padding: '8px 12px 8px 34px' }}
+                      />
+                      <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '0.8rem' }}></i>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Date Presets & Custom Date Range */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <label className="admin-label" style={{ margin: 0, fontSize: '0.72rem' }}>Filter by Submission Date</label>
+                    <div className="admin-preset-pills">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDatePreset('all')}
+                        className={`admin-preset-pill ${leadsDatePreset === 'all' ? 'active' : ''}`}
+                      >
+                        All Time
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDatePreset('today')}
+                        className={`admin-preset-pill ${leadsDatePreset === 'today' ? 'active' : ''}`}
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDatePreset('7days')}
+                        className={`admin-preset-pill ${leadsDatePreset === '7days' ? 'active' : ''}`}
+                      >
+                        Last 7 Days
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDatePreset('30days')}
+                        className={`admin-preset-pill ${leadsDatePreset === '30days' ? 'active' : ''}`}
+                      >
+                        Last 30 Days
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDatePreset('month')}
+                        className={`admin-preset-pill ${leadsDatePreset === 'month' ? 'active' : ''}`}
+                      >
+                        This Month
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Date Pickers & Actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '4px' }}>
+                    <div className="admin-date-picker-group">
+                      <label>From:</label>
+                      <input
+                        type="date"
+                        value={leadsStartDate}
+                        onChange={(e) => {
+                          setLeadsStartDate(e.target.value);
+                          setLeadsDatePreset('custom');
+                        }}
+                        className="admin-date-input"
+                      />
+                      <label>To:</label>
+                      <input
+                        type="date"
+                        value={leadsEndDate}
+                        onChange={(e) => {
+                          setLeadsEndDate(e.target.value);
+                          setLeadsDatePreset('custom');
+                        }}
+                        className="admin-date-input"
+                      />
+                      {(leadsStartDate || leadsEndDate || leadsDatePreset !== 'all' || leadsSearch) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleSelectDatePreset('all');
+                            setLeadsSearch('');
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#94a3b8',
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            marginLeft: '4px'
+                          }}
+                        >
+                          Reset Filters
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Export Contacts Button */}
+                    <button
+                      type="button"
+                      onClick={handleExportCSV}
+                      disabled={filteredLeads.length === 0}
+                      className="admin-btn-emerald"
+                      title="Download filtered leads contact list as CSV for Excel or Google Sheets"
+                      style={{ opacity: filteredLeads.length === 0 ? 0.5 : 1, cursor: filteredLeads.length === 0 ? 'not-allowed' : 'pointer' }}
+                    >
+                      <i className="fa-solid fa-file-arrow-down"></i>
+                      <span>Export Contacts ({filteredLeads.length})</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Counter */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '0 4px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                <span>
+                  Showing <strong style={{ color: '#ffffff' }}>{filteredLeads.length}</strong> of {allLeads.length} total inquiries
+                </span>
+                {leadsDatePreset !== 'all' && (
+                  <span style={{ color: '#d4af37', fontWeight: 500 }}>
+                    Active Date Filter: {leadsDatePreset.toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              {/* Inquiries List */}
+              {filteredLeads.length === 0 ? (
+                <div style={{ padding: '50px 16px', textAlign: 'center', background: 'rgba(2, 6, 23, 0.4)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto', fontSize: '1.25rem' }}>
+                    <i className="fa-solid fa-filter-circle-xmark"></i>
+                  </div>
+                  <h4 style={{ fontSize: '1.1rem', color: '#ffffff', margin: '0 0 6px 0', fontWeight: 500 }}>No Inquiries Found</h4>
+                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '0 0 16px 0', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
+                    No client inquiries match the selected date range or search keyword. Try clearing dates or selecting "All Time".
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSelectDatePreset('all');
+                      setLeadsSearch('');
+                      setViewingLeadsPropertyId('ALL');
+                    }}
+                    className="admin-btn-secondary"
+                    style={{ display: 'inline-flex', padding: '8px 16px' }}
+                  >
+                    Clear All Filters
+                  </button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {properties.find(p => p.id === viewingLeadsId)?.leads?.map((lead: any) => (
+                  {filteredLeads.map((lead: any) => (
                     <div key={lead.id} style={{
-                      padding: '16px',
-                      background: 'rgba(2, 6, 23, 0.6)',
+                      padding: '18px',
+                      background: 'rgba(2, 6, 23, 0.65)',
                       border: '1px solid rgba(255, 255, 255, 0.08)',
                       borderRadius: '14px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '12px'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>{lead.name}</h4>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{new Date(lead.createdAt).toLocaleString()}</span>
+                      {/* Top Lead Info */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#ffffff', margin: '0 0 4px 0' }}>
+                            {lead.name}
+                          </h4>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(212, 175, 55, 0.1)', border: '1px solid rgba(212, 175, 55, 0.25)', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', color: '#fce892' }}>
+                            <i className="fa-solid fa-building" style={{ fontSize: '10px' }}></i>
+                            <span>{lead.propertyTitle}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.78rem', color: '#94a3b8', display: 'block' }}>
+                            {new Date(lead.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                          </span>
+                        </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {lead.email && (
-                          <a 
-                            href={`mailto:${lead.email}`} 
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              background: 'rgba(56, 189, 248, 0.1)',
-                              border: '1px solid rgba(56, 189, 248, 0.3)',
-                              color: '#7dd3fc',
-                              fontSize: '0.75rem',
-                              textDecoration: 'none'
-                            }}
-                          >
-                            <i className="fa-solid fa-envelope"></i>
-                            <span>{lead.email}</span>
-                          </a>
-                        )}
+                      {/* Contact Channels */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         {lead.phone && (
                           <a 
                             href={`tel:${lead.phone}`} 
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              background: 'rgba(16, 185, 129, 0.1)',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              color: '#6ee7b7',
-                              fontSize: '0.75rem',
-                              textDecoration: 'none'
-                            }}
+                            className="lead-contact-btn phone"
+                            title="Call phone number"
                           >
                             <i className="fa-solid fa-phone"></i>
                             <span>{lead.phone}</span>
                           </a>
                         )}
+
+                        {lead.email && (
+                          <a 
+                            href={`mailto:${lead.email}`} 
+                            className="lead-contact-btn email"
+                            title="Send email"
+                          >
+                            <i className="fa-solid fa-envelope"></i>
+                            <span>{lead.email}</span>
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyContact(lead)}
+                          className="lead-contact-btn copy"
+                          title="Copy contact details to clipboard"
+                        >
+                          <i className={`fa-solid ${copiedLeadId === lead.id ? 'fa-check' : 'fa-copy'}`}></i>
+                          <span>{copiedLeadId === lead.id ? 'Copied!' : 'Copy Info'}</span>
+                        </button>
                       </div>
 
+                      {/* Lead Message */}
                       {lead.message && (
                         <div style={{
                           background: 'rgba(15, 23, 42, 0.8)',
                           border: '1px solid rgba(255, 255, 255, 0.05)',
                           borderRadius: '10px',
-                          padding: '12px',
-                          fontSize: '0.8rem',
+                          padding: '12px 14px',
+                          fontSize: '0.82rem',
                           color: '#cbd5e1'
                         }}>
-                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Message</span>
-                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{lead.message}</p>
+                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Client Requirement</span>
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{lead.message}</p>
                         </div>
                       )}
                     </div>
@@ -823,9 +1222,20 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
             {/* Leads Modal Footer */}
             <div className="admin-modal-footer">
               <button 
-                onClick={() => setViewingLeadsId(null)}
+                type="button"
+                onClick={handleExportCSV}
+                disabled={filteredLeads.length === 0}
+                className="admin-btn-emerald"
+                style={{ marginRight: 'auto', opacity: filteredLeads.length === 0 ? 0.5 : 1 }}
+              >
+                <i className="fa-solid fa-file-arrow-down"></i>
+                <span>Export ({filteredLeads.length})</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setViewingLeadsPropertyId(null)}
                 className="admin-btn-secondary"
-                style={{ width: '100%', justifyContent: 'center' }}
               >
                 Close Inquiries
               </button>
