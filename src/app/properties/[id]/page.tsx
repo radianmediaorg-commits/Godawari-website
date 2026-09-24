@@ -12,7 +12,7 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
     include: { units: true }
   });
 
-  if (!property) {
+  if (!property || property.status === 'ARCHIVED') {
     notFound();
   }
 

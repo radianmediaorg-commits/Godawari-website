@@ -19,7 +19,9 @@ export default async function AdminDashboard() {
   });
 
   const totalLeads = properties.reduce((acc, p) => acc + (p.leads?.length || 0), 0);
+  const activeCount = properties.filter(p => p.status !== 'ARCHIVED').length;
   const availableCount = properties.filter(p => p.status === 'AVAILABLE').length;
+  const archivedCount = properties.filter(p => p.status === 'ARCHIVED').length;
 
   return (
     <div className="admin-wrapper">
@@ -72,8 +74,8 @@ export default async function AdminDashboard() {
           <div className="admin-stats-grid">
             <div className="admin-stat-card stat-gold">
               <div>
-                <span className="admin-stat-label">Total Properties</span>
-                <span className="admin-stat-number">{properties.length}</span>
+                <span className="admin-stat-label">Active Properties</span>
+                <span className="admin-stat-number">{activeCount}</span>
               </div>
               <i className="fa-solid fa-building-columns admin-stat-icon"></i>
             </div>
@@ -83,6 +85,13 @@ export default async function AdminDashboard() {
                 <span className="admin-stat-number">{availableCount}</span>
               </div>
               <i className="fa-solid fa-circle-check admin-stat-icon"></i>
+            </div>
+            <div className="admin-stat-card stat-amber">
+              <div>
+                <span className="admin-stat-label">Archived Listings</span>
+                <span className="admin-stat-number">{archivedCount}</span>
+              </div>
+              <i className="fa-solid fa-box-archive admin-stat-icon"></i>
             </div>
             <div className="admin-stat-card stat-blue">
               <div>

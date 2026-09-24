@@ -4,6 +4,9 @@ import Link from 'next/link';
 
 export default async function PropertiesPage() {
   const properties = await prisma.property.findMany({
+    where: {
+      status: { not: 'ARCHIVED' }
+    },
     orderBy: { createdAt: 'desc' }
   });
 

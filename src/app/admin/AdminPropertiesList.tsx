@@ -25,7 +25,62 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
   const [leadsEndDate, setLeadsEndDate] = useState<string>('');
   const [leadsSearch, setLeadsSearch] = useState<string>('');
   const [copiedLeadId, setCopiedLeadId] = useState<string | null>(null);
+  const [propertyTab, setPropertyTab] = useState<'ACTIVE' | 'ARCHIVED' | 'ALL'>('ACTIVE');
+  const [archiveLoadingId, setArchiveLoadingId] = useState<string | null>(null);
   const router = useRouter();
+
+  const activePropertiesCount = properties.filter(p => p.status !== 'ARCHIVED').length;
+  const archivedPropertiesCount = properties.filter(p => p.status === 'ARCHIVED').length;
+
+  const displayedProperties = properties.filter(p => {
+    if (propertyTab === 'ACTIVE') return p.status !== 'ARCHIVED';
+    if (propertyTab === 'ARCHIVED') return p.status === 'ARCHIVED';
+    return true;
+  });
+
+  const handleToggleArchive = async (property: any) => {
+    const isCurrentlyArchived = property.status === 'ARCHIVED';
+    const nextStatus = isCurrentlyArchived ? 'AVAILABLE' : 'ARCHIVED';
+    const confirmMsg = isCurrentlyArchived
+      ? `Restore "${property.title}" to active public listings?`
+      : `Archive "${property.title}"?\n\nThis will immediately hide the property from the public website, but all leads, sub-units, photos, and records will be preserved safely.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setArchiveLoadingId(property.id);
+    try {
+      const res = await fetch(`/api/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+
+      if (res.ok) {
+        setProperties(properties.map(p => p.id === property.id ? { ...p, status: nextStatus } : p));
+        router.refresh();
+      } else {
+        alert('Failed to update property status. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating property status.');
+    } finally {
+      setArchiveLoadingId(null);
+    }
+  };
+
+  const renderStatusBadge = (status: string) => {
+    if (status === 'AVAILABLE') {
+      return <span className="admin-pill-status status-available">AVAILABLE</span>;
+    }
+    if (status === 'SOLD') {
+      return <span className="admin-pill-status status-sold">SOLD</span>;
+    }
+    if (status === 'ARCHIVED') {
+      return <span className="admin-pill-status status-archived">ARCHIVED</span>;
+    }
+    return <span className="admin-pill-status">{status}</span>;
+  };
 
   const handleOpenLeads = (propId: string | 'ALL' = 'ALL') => {
     setViewingLeadsPropertyId(propId);
@@ -351,7 +406,35 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         </div>
       </div>
 
-      {/* Empty State */}
+      {/* Property Status Filter Tabs */}
+      <div className="admin-tab-bar">
+        <button
+          type="button"
+          onClick={() => setPropertyTab('ACTIVE')}
+          className={`admin-tab-btn ${propertyTab === 'ACTIVE' ? 'active' : ''}`}
+        >
+          <i className="fa-solid fa-list-check"></i>
+          <span>Active Listings ({activePropertiesCount})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPropertyTab('ARCHIVED')}
+          className={`admin-tab-btn ${propertyTab === 'ARCHIVED' ? 'active' : ''}`}
+        >
+          <i className="fa-solid fa-box-archive"></i>
+          <span>Archived ({archivedPropertiesCount})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPropertyTab('ALL')}
+          className={`admin-tab-btn ${propertyTab === 'ALL' ? 'active' : ''}`}
+        >
+          <i className="fa-solid fa-layer-group"></i>
+          <span>All Properties ({properties.length})</span>
+        </button>
+      </div>
+
+      {/* Empty State (Total Portfolio) */}
       {properties.length === 0 && (
         <div className="admin-empty-card">
           <div className="admin-empty-icon">
@@ -373,12 +456,30 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
         </div>
       )}
 
+      {/* Empty State for Filtered Tab */}
+      {properties.length > 0 && displayedProperties.length === 0 && (
+        <div className="admin-empty-card" style={{ padding: '36px 20px', marginBottom: '24px' }}>
+          <div className="admin-empty-icon" style={{ width: '48px', height: '48px', fontSize: '1.2rem' }}>
+            <i className={propertyTab === 'ARCHIVED' ? "fa-solid fa-box-archive" : "fa-solid fa-hotel"}></i>
+          </div>
+          <h3 className="admin-empty-title" style={{ fontSize: '1.1rem' }}>
+            {propertyTab === 'ARCHIVED' ? 'No Archived Properties' : 'No Properties Found'}
+          </h3>
+          <p className="admin-empty-desc" style={{ fontSize: '0.85rem' }}>
+            {propertyTab === 'ARCHIVED' 
+              ? 'Properties you archive will appear here safely hidden from the public website, preserving leads, sub-units, and photos.'
+              : 'There are currently no properties matching the active tab view.'}
+          </p>
+        </div>
+      )}
+
       {/* Mobile Card Layout (Visible on screens <= 768px) */}
       <div className="admin-mobile-list">
-        {properties.map(p => {
+        {displayedProperties.map(p => {
           const cover = getCoverImage(p.images);
+          const isArchived = p.status === 'ARCHIVED';
           return (
-            <div key={p.id} className="admin-prop-card">
+            <div key={p.id} className="admin-prop-card" style={{ opacity: isArchived ? 0.85 : 1 }}>
               <div className="admin-prop-card-top">
                 {cover ? (
                   <a 
@@ -398,9 +499,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                 <div className="admin-prop-meta">
                   <div className="admin-prop-tags">
                     <span className="admin-pill-cat">{p.category}</span>
-                    <span className={`admin-pill-status ${p.status === 'AVAILABLE' ? 'status-available' : 'status-sold'}`}>
-                      {p.status}
-                    </span>
+                    {renderStatusBadge(p.status)}
                   </div>
                   <h3 className="admin-prop-title">
                     <a 
@@ -443,7 +542,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                   title="Open live property page in a new tab"
                 >
                   <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                  <span>View Live</span>
+                  <span>View</span>
                 </a>
                 <button
                   type="button"
@@ -453,6 +552,16 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                 >
                   <i className="fa-solid fa-users"></i>
                   <span>Leads ({p.leads?.length || 0})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleArchive(p)}
+                  disabled={archiveLoadingId === p.id}
+                  className={`admin-action-btn ${isArchived ? 'btn-restore' : 'btn-archive'}`}
+                  title={isArchived ? 'Restore to live website' : 'Archive and hide from public website'}
+                >
+                  <i className={archiveLoadingId === p.id ? "fa-solid fa-spinner fa-spin" : (isArchived ? "fa-solid fa-arrow-rotate-left" : "fa-solid fa-box-archive")}></i>
+                  <span>{isArchived ? 'Restore' : 'Archive'}</span>
                 </button>
                 <button
                   type="button"
@@ -479,7 +588,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
       </div>
 
       {/* Desktop Table Layout (Visible on screens > 768px) */}
-      {properties.length > 0 && (
+      {displayedProperties.length > 0 && (
         <div className="admin-desktop-table-card">
           <table className="admin-table">
             <thead>
@@ -493,10 +602,11 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
               </tr>
             </thead>
             <tbody>
-              {properties.map(p => {
+              {displayedProperties.map(p => {
                 const cover = getCoverImage(p.images);
+                const isArchived = p.status === 'ARCHIVED';
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id} style={{ opacity: isArchived ? 0.8 : 1 }}>
                     <td>
                       <div className="admin-table-item">
                         {cover ? (
@@ -540,9 +650,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                       <span className="admin-pill-cat">{p.category}</span>
                     </td>
                     <td>
-                      <span className={`admin-pill-status ${p.status === 'AVAILABLE' ? 'status-available' : 'status-sold'}`}>
-                        {p.status}
-                      </span>
+                      {renderStatusBadge(p.status)}
                     </td>
                     <td>
                       <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
@@ -573,6 +681,16 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                           <i className="fa-solid fa-arrow-up-right-from-square"></i>
                           <span>View</span>
                         </a>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleArchive(p)}
+                          disabled={archiveLoadingId === p.id}
+                          className={`admin-action-btn ${isArchived ? 'btn-restore' : 'btn-archive'}`}
+                          title={isArchived ? 'Restore to live website' : 'Archive (hide from public)'}
+                        >
+                          <i className={archiveLoadingId === p.id ? "fa-solid fa-spinner fa-spin" : (isArchived ? "fa-solid fa-arrow-rotate-left" : "fa-solid fa-box-archive")}></i>
+                          <span>{isArchived ? 'Restore' : 'Archive'}</span>
+                        </button>
                         <button 
                           type="button"
                           onClick={() => handleOpenModal(p)} 
@@ -686,6 +804,7 @@ export default function AdminPropertiesList({ initialProperties }: { initialProp
                     >
                       <option value="AVAILABLE">AVAILABLE</option>
                       <option value="SOLD">SOLD</option>
+                      <option value="ARCHIVED">ARCHIVED (Hidden from Public)</option>
                     </select>
                   </div>
                 </div>

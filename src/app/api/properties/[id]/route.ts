@@ -58,3 +58,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Failed to update property' }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const data = await req.json();
+    const property = await prisma.property.update({
+      where: { id },
+      data: {
+        ...(data.status ? { status: data.status } : {})
+      }
+    });
+    return NextResponse.json(property);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update property status' }, { status: 500 });
+  }
+}

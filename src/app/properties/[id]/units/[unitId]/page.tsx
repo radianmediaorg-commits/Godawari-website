@@ -13,7 +13,7 @@ export default async function UnitDetailsPage({ params }: { params: Promise<{ id
     include: { property: true }
   });
 
-  if (!unit || unit.propertyId !== id) {
+  if (!unit || unit.propertyId !== id || unit.property?.status === 'ARCHIVED') {
     notFound();
   }
 

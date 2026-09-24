@@ -238,6 +238,9 @@
 .stat-blue .admin-stat-icon { color: #38bdf8; }
 .stat-blue { border-left: 3px solid #38bdf8; }
 
+.stat-amber .admin-stat-icon { color: #f59e0b; }
+.stat-amber { border-left: 3px solid #f59e0b; }
+
 /* Action Toolbar */
 .admin-toolbar {
   display: flex;
@@ -425,6 +428,12 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.status-archived {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
 .admin-prop-title {
   font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 1.05rem;
@@ -507,6 +516,68 @@
 
 .btn-delete:hover {
   background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-archive {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.btn-archive:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.btn-restore {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.btn-restore:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+/* Property Status Tabs */
+.admin-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.admin-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.admin-tab-btn.active {
+  background: rgba(212, 175, 55, 0.18);
+  border-color: #d4af37;
+  color: #fce892;
+  font-weight: 600;
 }
 
 /* Desktop Table */
