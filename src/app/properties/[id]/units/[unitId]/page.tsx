@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import PropertyContactForm from '@/components/PropertyContactForm';
+import PhotoGallery from '@/components/PhotoGallery';
 
 export default async function UnitDetailsPage({ params }: { params: Promise<{ id: string, unitId: string }> }) {
   const { id, unitId } = await params;
@@ -52,12 +53,14 @@ export default async function UnitDetailsPage({ params }: { params: Promise<{ id
             <i className="fa-solid fa-arrow-left"></i> Back to Property
           </Link>
           
-          <div style={{ position: 'relative', height: '400px', borderRadius: '12px', overflow: 'hidden', marginBottom: '40px' }}>
-            <img src={coverImage} alt={unit.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {unit.status === 'SOLD' && (
-              <div style={{ position: 'absolute', top: 20, right: 20, background: 'red', color: 'white', padding: '10px 20px', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold', zIndex: 10 }}>SOLD</div>
-            )}
-          </div>
+          <PhotoGallery 
+            images={images} 
+            title={`${unit.title} (${unit.property.title})`} 
+            variant="hero" 
+            status={unit.status} 
+            coverImage={coverImage} 
+            heroHeight="420px" 
+          />
 
           <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1.5', minWidth: '300px' }}>
@@ -92,16 +95,11 @@ export default async function UnitDetailsPage({ params }: { params: Promise<{ id
               )}
 
               {images.length > 0 && (
-                <div style={{ marginTop: '20px' }}>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>Photo Gallery</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-                    {images.map((img: string, idx: number) => (
-                      <div key={idx} className="unit-gallery-img" style={{ height: '200px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
-                        <img src={img} alt={`${unit.title} - ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <PhotoGallery 
+                  images={images} 
+                  title={unit.title} 
+                  variant="grid" 
+                />
               )}
             </div>
 

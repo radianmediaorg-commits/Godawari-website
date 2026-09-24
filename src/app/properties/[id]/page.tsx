@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import PropertyContactForm from '@/components/PropertyContactForm';
+import PhotoGallery from '@/components/PhotoGallery';
 
 export default async function PropertyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
     notFound();
   }
 
-  let images = [];
+  let images: string[] = [];
   try {
     images = JSON.parse(property.images || '[]');
   } catch (e) {
@@ -47,12 +48,14 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
             <i className="fa-solid fa-arrow-left"></i> Back to Properties
           </Link>
           
-          <div style={{ position: 'relative', height: '500px', borderRadius: '12px', overflow: 'hidden', marginBottom: '40px' }}>
-            <img src={coverImage} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {property.status === 'SOLD' && (
-              <div style={{ position: 'absolute', top: 20, right: 20, background: 'red', color: 'white', padding: '10px 20px', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold', zIndex: 10 }}>SOLD</div>
-            )}
-          </div>
+          <PhotoGallery 
+            images={images} 
+            title={property.title} 
+            variant="hero" 
+            status={property.status} 
+            coverImage={coverImage} 
+            heroHeight="500px" 
+          />
 
           <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1.5', minWidth: '300px' }}>
@@ -84,6 +87,14 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
               <div style={{ color: 'var(--text-light)', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
                 {property.description}
               </div>
+
+              {images.length > 0 && (
+                <PhotoGallery 
+                  images={images} 
+                  title={property.title} 
+                  variant="grid" 
+                />
+              )}
 
               {property.units && property.units.length > 0 && (
                 <div style={{ marginTop: '40px' }}>

@@ -1,0 +1,506 @@
+/* Luxury Real Estate Photo Gallery & Lightbox Styles */
+
+/* Hero Banner Variant */
+.heroBanner {
+  position: relative;
+  height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 40px;
+  cursor: pointer;
+  background: #0f172a;
+}
+
+.heroBanner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
+}
+
+.heroBanner:hover img {
+  transform: scale(1.03);
+}
+
+.heroBadgeTrigger {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+  z-index: 5;
+}
+
+.heroBanner:hover .heroBadgeTrigger {
+  background: rgba(212, 175, 55, 0.95);
+  color: #0f172a;
+  border-color: #d4af37;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(212, 175, 55, 0.4);
+}
+
+.soldBadge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #ef4444;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.gallerySection {
+  margin-top: 35px;
+  margin-bottom: 35px;
+}
+
+.galleryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.galleryTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.viewAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 30px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary-color, #0f172a);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.viewAllBtn:hover {
+  background: var(--primary-color, #0f172a);
+  color: #ffffff;
+  border-color: var(--primary-color, #0f172a);
+  transform: translateY(-1px);
+}
+
+/* Grid Layout */
+.gridContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.gridItem {
+  position: relative;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #0f172a;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gridItem:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.gridItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+
+.gridItem:hover img {
+  transform: scale(1.06);
+}
+
+.imageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.6) 0%, transparent 60%);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+.gridItem:hover .imageOverlay {
+  opacity: 1;
+}
+
+.expandBadge {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.moreCountOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.5rem;
+  backdrop-filter: blur(4px);
+  transition: background 0.3s ease;
+}
+
+.moreCountOverlay span {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #cbd5e1;
+  margin-top: 4px;
+}
+
+.gridItem:hover .moreCountOverlay {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* ==========================================================================
+   Full Screen Lightbox Modal
+   ========================================================================== */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #070a13;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.25s ease-out forwards;
+  user-select: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Lightbox Header */
+.lightboxHeader {
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.4);
+  flex-shrink: 0;
+}
+
+.lightboxTitleGroup {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.lightboxTitle {
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+.lightboxCounter {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lightboxActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lightboxActionBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.lightboxActionBtn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #d4af37;
+  transform: scale(1.05);
+}
+
+.closeBtn {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.closeBtn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+/* Lightbox Stage (Central Image + Nav Arrows) */
+.lightboxStage {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  overflow: hidden;
+}
+
+.stageImageWrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stageImage {
+  max-width: 90vw;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
+  animation: zoomFade 0.25s ease-out;
+  cursor: zoom-in;
+}
+
+.stageImage.isZoomed {
+  transform: scale(1.6);
+  cursor: zoom-out;
+}
+
+@keyframes zoomFade {
+  from {
+    opacity: 0.4;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Navigation Arrows */
+.navArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.navArrow:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: #d4af37;
+  color: #fce892;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+.navArrowLeft {
+  left: 24px;
+}
+
+.navArrowRight {
+  right: 24px;
+}
+
+/* Lightbox Bottom Thumbnails */
+.lightboxThumbnails {
+  height: 96px;
+  background: rgba(10, 14, 26, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  flex-shrink: 0;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.lightboxThumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.lightboxThumbnails::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.thumbnailItem {
+  height: 70px;
+  width: 105px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.45;
+  border: 2px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.thumbnailItem:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
+}
+
+.thumbnailItem.activeThumbnail {
+  opacity: 1;
+  border-color: #d4af37;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.6);
+  transform: translateY(-3px) scale(1.05);
+}
+
+.thumbnailItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .lightboxHeader {
+    height: 54px;
+    padding: 0 12px;
+  }
+
+  .lightboxTitleGroup {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lightboxTitle {
+    max-width: 140px;
+    font-size: 0.88rem;
+  }
+
+  .lightboxCounter {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+
+  .lightboxActions {
+    gap: 6px;
+  }
+
+  .lightboxActionBtn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
+
+  .stageImage {
+    max-width: 98vw;
+    max-height: 68vh;
+  }
+
+  .navArrow {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+    background: rgba(15, 23, 42, 0.85);
+  }
+
+  .navArrowLeft {
+    left: 8px;
+  }
+
+  .navArrowRight {
+    right: 8px;
+  }
+
+  .lightboxThumbnails {
+    height: 76px;
+    padding: 8px 12px;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .thumbnailItem {
+    height: 52px;
+    width: 76px;
+  }
+}
